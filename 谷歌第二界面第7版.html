@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星空彼岸</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        /* 全局和基础样式 */
+        body {
+            margin: 0;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            overflow: hidden;
+            background: #0d0e1b;
+            color: #fff;
+            scroll-behavior: smooth;
+        }
+
+        /* 网页切换动画叠加层 */
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #bfe6e6;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 1.5s ease-in-out;
+        }
+        
+        .transition-overlay.active {
+            opacity: 1;
+            animation: fade-out 2s forwards;
+        }
+
+        @keyframes fade-out {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        /* 页面容器和切换效果 */
+        .page-container {
+            height: 100vh;
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
+            transition: filter 1s ease; /* 新增滤镜过渡 */
+        }
+
+        .page {
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            transition: opacity 1s ease-in-out;
+        }
+
+        /* 界面标题和文本的通用样式和动画 */
+        .page-title {
+            font-size: 3rem;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            animation: float 3s ease-in-out infinite alternate;
+            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+            opacity: 1;
+            z-index: 2;
+        }
+        
+        .page-text {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+            opacity: 1;
+            z-index: 2;
+        }
+
+        .page .content.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        /* 界面一：星空背景和星星交互 */
+        .page-one {
+            background: #0d0e1b;
+        }
+
+        .galaxy-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            perspective: 1000px;
+        }
+
+        /* 交互星星的样式 */
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.5), 0 0 10px 5px rgba(255, 255, 255, 0.2);
+            animation: twinkle 1.5s infinite alternate;
+            cursor: pointer;
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* 鼠标光圈的样式 - 仅在第一页显示 */
+        #mouse-aura {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            filter: blur(10px);
+        }
+
+        .page-one:hover #mouse-aura {
+            opacity: 1;
+        }
+
+        /* 流星效果 */
+        .shooting-star {
+            position: absolute;
+            background: linear-gradient(-45deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: shoot 5s linear infinite;
+        }
+
+        @keyframes shoot {
+            from {
+                transform: translate(-100vw, -100vh) rotate(-45deg);
+                opacity: 0;
+            }
+            to {
+                transform: translate(100vw, 100vh) rotate(-45deg);
+                opacity: 1;
+            }
+        }
+
+        /* 随机内容弹窗样式 */
+        .popup-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .popup-content {
+            background: rgba(30, 30, 50, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            max-width: 500px;
+            color: #fff;
+            transform: scale(0.8);
+            opacity: 0;
+            animation: popup-in 0.5s forwards;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes popup-in {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #popup-text {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        #close-popup {
+            background: #bfe6e6;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            transition: all 0.3s ease;
+        }
+
+        #close-popup:hover {
+            background: #99c2c2;
+        }
+
+        /* 滚动指示箭头 */
+        .scroll-down-arrow {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 30px;
+            height: 30px;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            animation: arrow-bounce 1.5s infinite;
+            z-index: 10;
+        }
+        
+        @keyframes arrow-bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0) rotate(45deg); }
+            40% { transform: translateX(-50%) translateY(-15px) rotate(45deg); }
+            60% { transform: translateX(-50%) translateY(-7px) rotate(45deg); }
+        }
+
+        /* 界面二：星云之歌 */
+        .page-two {
+            background: #0d0e1b;
+        }
+        
+        #nebula-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .nebula-particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            transition: all 0.5s ease-out;
+            will-change: transform, opacity; /* 提升动画性能 */
+            filter: blur(50px); /* 增加云雾感 */
+        }
+        
+        .nebula-star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+            animation: twinkle 2s infinite alternate;
+            transition: all 0.5s ease-out;
+            cursor: pointer;
+        }
+
+        .nebula-particle.arc-effect {
+            box-shadow: 0 0 15px 5px var(--arc-color), 0 0 30px 10px var(--arc-color-light);
+            filter: blur(20px);
+        }
+
+        /* 界面三：宇宙深渊 */
+        .page-three {
+            background: #000;
+            cursor: pointer;
+        }
+
+        .blackhole {
+            width: 200px;
+            height: 200px;
+            background: #000;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 50px 20px rgba(0, 0, 0, 1), 0 0 100px 50px #000, inset 0 0 50px 10px #222;
+            animation: blackhole-pulse 4s infinite ease-in-out alternate;
+            z-index: 1;
+            transition: transform 0.5s ease;
+        }
+
+        @keyframes blackhole-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        .blackhole-event-horizon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            height: 400px;
+            transform: translate(-50%, -50%) rotate(0deg);
+            border-radius: 50%;
+            border: 2px solid;
+            border-color: transparent transparent transparent #fff;
+            animation: event-horizon-spin 10s infinite linear;
+        }
+
+        @keyframes event-horizon-spin {
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .blackhole-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            z-index: 2;
+            transition: all 0.5s ease-out;
+        }
+
+        .blackhole-text {
+            position: relative;
+            z-index: 2;
+            margin-top: 20px;
+            font-size: 1.5rem;
+            opacity: 0.8;
+            transition: all 0.5s ease-out;
+        }
+        
+        .blackhole-title.disperse, .blackhole-text.disperse {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+            transition: all 1s ease-out;
+        }
+        .blackhole-text.disperse {
+             transform: translateY(-20px) scale(2);
+        }
+
+        .acceleration-effect {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .star-burst {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            background: radial-gradient(circle, var(--star-color) 0%, transparent 70%);
+            will-change: transform, opacity;
+        }
+
+        /* 宇宙穿梭效果 */
+        .hyperspace-line {
+            position: absolute;
+            background: linear-gradient(to right, transparent, var(--line-color), transparent);
+            height: 2px;
+            opacity: 0;
+            will-change: transform, opacity;
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="transition-overlay" id="transition-overlay">
+        <div class="stars-fade"></div>
+    </div>
+    
+    <div class="page-container" id="page-container">
+        
+        <section class="page page-one" id="page-one">
+            <div class="galaxy-container" id="galaxy-container">
+                </div>
+            <div class="content" id="galaxy-content">
+                <h1 class="page-title">星海启程</h1>
+                <p class="page-text">点击星星，听听宇宙的声音。</p>
+            </div>
+            <div class="popup-container" id="popup-container">
+                <div class="popup-content" id="popup-content">
+                    <p id="popup-text"></p>
+                    <button id="close-popup">关闭</button>
+                </div>
+            </div>
+            <div class="scroll-down-arrow"></div>
+        </section>
+        
+        <section class="page page-two" id="page-two">
+            <div id="nebula-container"></div>
+            <div class="content" id="nebula-content">
+                <h1 class="page-title">星云之歌</h1>
+                <p class="page-text">在这里，每一片星云都唱着一首古老的歌，讲述着宇宙的起源和未来的秘密。</p>
+            </div>
+        </section>
+        
+        <section class="page page-three" id="page-three">
+            <div class="blackhole">
+                <div class="blackhole-event-horizon"></div>
+            </div>
+            <div class="content" id="blackhole-content">
+                <h1 class="page-title">宇宙深渊</h1>
+                <p class="page-text">探索黑洞的边缘，寻找未知的真理。</p>
+            </div>
+        </section>
+        
+    </div>
+
+    <div id="mouse-aura"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const transitionOverlay = document.getElementById('transition-overlay');
+            const galaxyContainer = document.getElementById('galaxy-container');
+            const popupContainer = document.getElementById('popup-container');
+            const popupText = document.getElementById('popup-text');
+            const closePopupButton = document.getElementById('close-popup');
+            const pageContainer = document.getElementById('page-container');
+            const mouseAura = document.getElementById('mouse-aura');
+            const nebulaContainer = document.getElementById('nebula-container');
+            const nebulaContent = document.getElementById('nebula-content');
+            const galaxyContent = document.getElementById('galaxy-content');
+            const blackholeContent = document.getElementById('blackhole-content');
+            const pageOne = document.getElementById('page-one');
+            const pageTwo = document.getElementById('page-two');
+            const pageThree = document.getElementById('page-three');
+            const blackholeTitle = document.querySelector('.page-three .page-title');
+            const blackholeText = document.querySelector('.page-three .page-text');
+            
+            const stars = [];
+            let nebulaParticles = [];
+            let nebulaStars = [];
+            let audioContext;
+            let gainNode;
+            let reverbNode; // 全局混响节点
+            let accelerationAudio;
+            let tinnitusAudio;
+            let isAccelerating = false;
+            let accelerationStartTime = 0;
+            let accelerationInterval;
+            const accelerationEffects = [];
+
+            const creativeContent = [
+                "你以为是流星，其实是宇宙在为你眨眼。",
+                "点击这颗星，你会发现宇宙的寂静远比想象中喧嚣。",
+                "这颗星星里面藏着一个秘密，关于你从未说出口的愿望。",
+                "你曾以为自己是宇宙的中心，但其实你只是宇宙中的一个微光。",
+                "这颗星的光，穿越亿万光年，只为告诉你，孤独是宇宙的常态。",
+                "每一个闪烁，都曾是一场宇宙大爆炸的回声。",
+                "别急着许愿，这颗星可能只是宇宙中的一个故障像素点。",
+                "当你凝视深渊时，深渊也在你面前打了个哈欠。",
+                "这颗星，或许是某个遥远文明的未接来电。",
+                "宇宙的尽头不是时间，而是你那无止境的想象。",
+                "你的心跳，是宇宙中最微弱，也最坚定的鼓点。",
+                "宇宙的奥秘，始于一颗尘埃，终于你的一声叹息。",
+                "这颗星光，也许是某个被遗忘星球的最后遗言。",
+                "在这片星海中，你的每一个念头都是一颗新生的星辰。",
+                "别找了，你所追寻的答案，并不在这些星星里。",
+                "如果每颗星都代表一个故事，那你的故事会是什么颜色？",
+                "宇宙给了我们无限的黑夜，是为了让这颗星星更亮。",
+                "你觉得这颗星离你很远，但它却比你的烦恼更永恒。",
+                "这一刻，你和这颗星都漂浮在宇宙的沉默里。",
+                "宇宙没有规则，但它给了你自由。",
+                "星空之下，你的渺小，即是你的无限。",
+                "也许我们都是来自宇宙的访客，只是忘记了回家的路。",
+                "这颗星的光芒，比你的手机屏幕更真实。",
+                "在你的所见的星海里，有一颗星，是为你而闪。",
+                "宇宙的孤独，是唯一能和你的孤独相匹配的东西。",
+                "别再寻找奇迹了，你就是宇宙的奇迹。",
+                "这颗星不会回答你的问题，但它会默默倾听。",
+                "宇宙是一个巨大的图书馆，每一颗星都是一本尘封的古籍。",
+                "这片星空，是你内心世界的投影。",
+                "你的每一次呼吸，都是宇宙的呼吸。",
+                "You thought it was a shooting star, but it was the universe winking at you.",
+                "Click this star and you'll find that the silence of the universe is louder than you think.",
+                "This star holds a secret—about a wish you never dared to make.",
+                "You believed you were the center of the universe, but you're just a tiny flicker in its vastness.",
+                "The light from this star has traveled for eons just to tell you that loneliness is the cosmic norm.",
+                "Every sparkle is the echo of a forgotten supernova.",
+                "Don't be too quick to make a wish; this star might just be a cosmic glitch.",
+                "When you gaze into the abyss, the abyss yawns back at you.",
+                "This star could be a missed call from a distant civilization.",
+                "The end of the universe isn't time; it's the end of your imagination.",
+                "Your heartbeat is the universe's softest, yet most persistent drumbeat.",
+                "The mystery of the universe begins with a speck of dust and ends with your sigh.",
+                "The light from this star might be the last word of a forgotten planet.",
+                "In this sea of stars, every thought you have is a newborn celestial body.",
+                "Stop searching; the answers you seek aren't in these stars.",
+                "If every star tells a story, what color would yours be?",
+                "The universe gave us infinite darkness so this star could shine brighter.",
+                "You think this star is far away, but it's more eternal than your worries.",
+                "In this moment, you and this star are floating in cosmic silence.",
+                "The universe has no rules, but it has given you freedom.",
+                "Beneath this starry sky, your smallness is your infinite potential.",
+                "Maybe we are all cosmic visitors who have just forgotten our way home.",
+                "The light from this star is more real than your phone screen.",
+                "In the galaxy you see, one star twinkles just for you.",
+                "The loneliness of the universe is the only thing that can match your own.",
+            ];
+
+            const nebulaStarContent = [
+                "这颗星云中的星，是你未曾实现的梦。",
+                "你所听见的，是星辰在诞生时的第一声歌唱。",
+                "这片星云的形状，是你内心深处最深的渴望。",
+                "每个流动的光点，都是一个宇宙的念头。",
+                "这颗星知道你最深的秘密，但它永远不会说出去。",
+                "点击我，你将听见宇宙最温柔的低语。",
+            ];
+            
+            // 界面标题显示逻辑
+            function showTitlesTemporarily() {
+                const pageHeight = window.innerHeight;
+                const scrollY = pageContainer.scrollTop;
+                const currentPageIndex = Math.round(scrollY / pageHeight);
+
+                // 隐藏所有标题
+                document.querySelectorAll('.page .content').forEach(el => el.classList.add('hidden'));
+
+                // 显示当前页面的标题
+                if (currentPageIndex === 0) {
+                    galaxyContent.classList.remove('hidden');
+                } else if (currentPageIndex === 1) {
+                    nebulaContent.classList.remove('hidden');
+                } else if (currentPageIndex === 2) {
+                    blackholeContent.classList.remove('hidden');
+                }
+                
+                // 3秒后隐藏标题
+                setTimeout(() => {
+                    document.querySelectorAll('.page .content').forEach(el => el.classList.add('hidden'));
+                }, 3000);
+            }
+
+            // 1. 网页入场动画
+            setTimeout(() => {
+                transitionOverlay.classList.add('active');
+                showTitlesTemporarily(); // 首次加载时显示标题
+            }, 500);
+
+            // 2. 全局音效初始化
+            if (window.AudioContext) {
+                audioContext = new AudioContext();
+                reverbNode = audioContext.createConvolver();
+                gainNode = audioContext.createGain();
+                gainNode.connect(reverbNode);
+                reverbNode.connect(audioContext.destination);
+
+                // 创建一个简单的混响脉冲响应（Impulse Response）
+                function createReverbImpulse() {
+                    const length = audioContext.sampleRate * 2;
+                    const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
+                    const left = impulse.getChannelData(0);
+                    const right = impulse.getChannelData(1);
+
+                    for (let i = 0; i < length; i++) {
+                        const n = i / length;
+                        const whiteNoise = (Math.random() * 2 - 1) * Math.pow(1 - n, 2);
+                        left[i] = whiteNoise;
+                        right[i] = whiteNoise;
+                    }
+                    reverbNode.buffer = impulse;
+                }
+                createReverbImpulse();
+            }
+
+            // 3. 动态生成星星
+            function createStar() {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 3 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `-${Math.random() * 2}s`;
+                
+                star.addEventListener('click', () => {
+                    const randomIndex = Math.floor(Math.random() * creativeContent.length);
+                    popupText.textContent = creativeContent[randomIndex];
+                    popupContainer.style.display = 'flex';
+                });
+
+                galaxyContainer.appendChild(star);
+                stars.push(star);
+            }
+            for (let i = 0; i < 200; i++) {
+                createStar();
+            }
+            
+            // 4. 动态生成流星
+            function createShootingStar() {
+                const shootingStar = document.createElement('div');
+                shootingStar.classList.add('shooting-star');
+                const size = Math.random() * 2 + 1;
+                const duration = Math.random() * 4 + 3;
+                shootingStar.style.width = `${size}px`;
+                shootingStar.style.height = `${size * 20}px`;
+                shootingStar.style.left = `${Math.random() * 100}%`;
+                shootingStar.style.top = `${Math.random() * 100}%`;
+                shootingStar.style.animationDuration = `${duration}s`;
+                shootingStar.style.animationDelay = `-${Math.random() * 5}s`;
+                
+                galaxyContainer.appendChild(shootingStar);
+                
+                setTimeout(() => {
+                    if (galaxyContainer.contains(shootingStar)) {
+                         shootingStar.remove();
+                    }
+                }, duration * 1000);
+            }
+            setInterval(createShootingStar, 5000);
+
+            // 5. 关闭弹窗
+            closePopupButton.addEventListener('click', () => {
+                popupContainer.style.display = 'none';
+            });
+
+            // 6. 鼠标交互和色调变化 (第一页)
+            galaxyContainer.addEventListener('mousemove', (e) => {
+                mouseAura.style.left = `${e.clientX}px`;
+                mouseAura.style.top = `${e.clientY}px`;
+
+                const rect = galaxyContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                stars.forEach(star => {
+                    const starRect = star.getBoundingClientRect();
+                    const starX = starRect.left - rect.left + starRect.width / 2;
+                    const starY = starRect.top - rect.top + starRect.height / 2;
+
+                    const distance = Math.sqrt(Math.pow(mouseX - starX, 2) + Math.pow(mouseY - starY, 2));
+                    const maxDistance = 200;
+                    
+                    if (distance < maxDistance) {
+                        const influence = 1 - (distance / maxDistance);
+                        const hue = influence * 240;
+                        star.style.backgroundColor = `hsl(${hue}, 100%, 80%)`;
+                        star.style.transform = `scale(${1 + influence * 0.5})`;
+                        star.style.boxShadow = `0 0 ${10 * influence}px ${5 * influence}px rgba(255, 255, 255, 0.8)`;
+                    } else {
+                        star.style.backgroundColor = '#fff';
+                        star.style.transform = 'scale(1)';
+                        star.style.boxShadow = '0 0 5px 2px rgba(255, 255, 255, 0.5), 0 0 10px 5px rgba(255, 255, 255, 0.2)';
+                    }
+                });
+            });
+
+            // 7. 星云之歌界面优化
+            const numParticles = 100;
+            const numNebulaStars = 50;
+            const nebulaColors = [
+                'rgba(180, 220, 255, 0.05)',
+                'rgba(200, 240, 255, 0.08)',
+                'rgba(255, 180, 255, 0.05)',
+                'rgba(255, 255, 180, 0.05)'
+            ];
+            
+            function createNebulaParticle() {
+                const p = document.createElement('div');
+                p.classList.add('nebula-particle');
+                const size = Math.random() * 200 + 100;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}%`;
+                p.style.top = `${Math.random() * 100}%`;
+                p.style.backgroundColor = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
+                p.style.transform = `translate(-50%, -50%) scale(${Math.random() * 0.5 + 0.5})`;
+                p.originalX = parseFloat(p.style.left);
+                p.originalY = parseFloat(p.style.top);
+                nebulaContainer.appendChild(p);
+                nebulaParticles.push(p);
+            }
+
+            function createNebulaStar() {
+                const star = document.createElement('div');
+                star.classList.add('nebula-star');
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `-${Math.random() * 2}s`;
+
+                // 新增：星星点击彩蛋
+                star.addEventListener('click', () => {
+                    const randomIndex = Math.floor(Math.random() * nebulaStarContent.length);
+                    popupText.textContent = nebulaStarContent[randomIndex];
+                    popupContainer.style.display = 'flex';
+                });
+
+                nebulaContainer.appendChild(star);
+                nebulaStars.push({
+                    element: star,
+                    originalX: parseFloat(star.style.left),
+                    originalY: parseFloat(star.style.top)
+                });
+            }
+
+            for (let i = 0; i < numParticles; i++) {
+                createNebulaParticle();
+            }
+            for (let i = 0; i < numNebulaStars; i++) {
+                createNebulaStar();
+            }
+
+            // 8. 星云界面鼠标交互与音效优化
+            const majorPentatonicScale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C, D, E, G, A, C'
+            let lastNoteTime = 0;
+            const noteCooldown = 150; // ms
+
+            nebulaContainer.addEventListener('mousemove', (e) => {
+                const rect = nebulaContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const currentTime = Date.now();
+                const mouseInfluence = { x: (mouseX / rect.width) * 2 - 1, y: (mouseY / rect.height) * 2 - 1 };
+
+                nebulaParticles.forEach(p => {
+                    const particleX = p.originalX / 100 * rect.width;
+                    const particleY = p.originalY / 100 * rect.height;
+
+                    const distance = Math.sqrt(Math.pow(mouseX - particleX, 2) + Math.pow(mouseY - particleY, 2));
+                    const repulsionRadius = 250;
+                    
+                    if (distance < repulsionRadius) {
+                        const influence = 1 - (distance / repulsionRadius);
+                        const angle = Math.atan2(particleY - mouseY, particleX - mouseX);
+                        const newX = particleX + Math.cos(angle) * influence * 150;
+                        const newY = particleY + Math.sin(angle) * influence * 150;
+                        
+                        p.style.transform = `translate(${newX - particleX - 50}px, ${newY - particleY - 50}px) scale(${1 + influence * 0.5})`;
+                        p.style.opacity = 0.5 + influence * 0.5;
+                        p.classList.add('arc-effect');
+                        const hue = (p.originalX + p.originalY) % 360;
+                        p.style.setProperty('--arc-color', `hsl(${hue}, 100%, 80%, ${influence * 0.5})`);
+                        p.style.setProperty('--arc-color-light', `hsl(${hue}, 100%, 90%, ${influence * 0.3})`);
+
+                    } else {
+                        p.style.transform = `translate(-50%, -50%) scale(${Math.random() * 0.5 + 0.5})`;
+                        p.style.opacity = 0.1;
+                        p.classList.remove('arc-effect');
+                    }
+                });
+
+                // 新的星星移动逻辑
+                nebulaStars.forEach(star => {
+                    const starElement = star.element;
+                    const starX = star.originalX / 100 * rect.width;
+                    const starY = star.originalY / 100 * rect.height;
+                    const distance = Math.sqrt(Math.pow(mouseX - starX, 2) + Math.pow(mouseY - starY, 2));
+                    
+                    const influence = Math.max(0, 1 - distance / 150);
+                    const newX = starX + mouseInfluence.x * 50 * influence;
+                    const newY = starY + mouseInfluence.y * 50 * influence;
+                    
+                    starElement.style.transform = `translate(${newX - starX}px, ${newY - starY}px) scale(${1 + influence * 0.5})`;
+                    starElement.style.opacity = 0.5 + influence * 0.5;
+                });
+
+                // 音效逻辑
+                if (audioContext && (currentTime - lastNoteTime > noteCooldown)) {
+                    lastNoteTime = currentTime;
+                    const noteIndex = Math.floor((mouseY / rect.height) * majorPentatonicScale.length);
+                    const frequency = majorPentatonicScale[noteIndex];
+                    const gainValue = 0.1 + (mouseX / rect.width) * 0.4;
+                    const duration = 0.2 + (mouseX / rect.width) * 0.5;
+                    
+                    const oscillator = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    
+                    gain.gain.setValueAtTime(0, audioContext.currentTime);
+                    gain.gain.linearRampToValueAtTime(gainValue, audioContext.currentTime + 0.1);
+                    gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+                    
+                    oscillator.connect(gain);
+                    gain.connect(reverbNode);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + duration);
+                }
+            });
+
+            // 9. 页面滚动时的逻辑和全局滤镜
+            pageContainer.addEventListener('scroll', () => {
+                const currentScroll = pageContainer.scrollTop;
+                const pageHeight = window.innerHeight;
+                const scrollProgress = currentScroll / (pageHeight * 2); // 总滚动距离为2页
+                
+                // 优化后的全局滤镜调整
+                const hue = 10 * scrollProgress; // 保持色彩在蓝色调附近微调
+                const blur = 5 * Math.sin(scrollProgress * Math.PI); // 滚动到中间时模糊最大
+                pageContainer.style.filter = `hue-rotate(${hue}deg) sepia(${0.2*blur}%) blur(${blur}px)`;
+                
+                const currentPageIndex = Math.round(currentScroll / pageHeight);
+                
+                // 控制鼠标光圈显示
+                mouseAura.style.opacity = currentPageIndex === 0 ? 1 : 0;
+            });
+
+            // 监听滚动结束事件
+            let scrollTimeout;
+            pageContainer.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    const pageHeight = window.innerHeight;
+                    const scrollY = pageContainer.scrollTop;
+                    const currentPageIndex = Math.round(scrollY / pageHeight);
+
+                    // 如果滚动到新的页面，则显示标题
+                    if (currentPageIndex !== lastPageIndex) {
+                        showTitlesTemporarily();
+                    }
+                    lastPageIndex = currentPageIndex;
+                }, 200);
+            });
+
+            let lastPageIndex = 0; // 记录上次的页面索引
+
+            // 10. 宇宙深渊界面长按互动
+            pageThree.addEventListener('mousedown', (e) => {
+                if (e.button === 0) {
+                    isAccelerating = true;
+                    accelerationStartTime = Date.now();
+                    
+                    blackholeTitle.style.transition = 'none';
+                    blackholeText.style.transition = 'none';
+                    
+                    if (audioContext) {
+                        // 主加速音
+                        accelerationAudio = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        accelerationAudio.type = 'sawtooth';
+                        accelerationAudio.connect(gain);
+                        gain.connect(reverbNode);
+                        accelerationAudio.start();
+
+                        // 背景星空环境音
+                        const backgroundNoise = audioContext.createBufferSource();
+                        const noiseBuffer = audioContext.createBuffer(2, audioContext.sampleRate, audioContext.sampleRate);
+                        const left = noiseBuffer.getChannelData(0);
+                        const right = noiseBuffer.getChannelData(1);
+                        for(let i=0; i < noiseBuffer.length; i++){
+                            left[i] = Math.random() * 2 - 1;
+                            right[i] = Math.random() * 2 - 1;
+                        }
+                        backgroundNoise.buffer = noiseBuffer;
+                        backgroundNoise.loop = true;
+                        const filter = audioContext.createBiquadFilter();
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(500, audioContext.currentTime);
+                        backgroundNoise.connect(filter);
+                        filter.connect(reverbNode);
+                        backgroundNoise.start();
+                    }
+
+                    accelerationInterval = setInterval(() => {
+                        const elapsedTime = (Date.now() - accelerationStartTime) / 1000;
+                        const progress = Math.min(elapsedTime / 20, 1);
+                        
+                        // 标题和文本效果
+                        blackholeTitle.style.transform = `translate(-50%, -50%) scale(${1 + progress * 2})`;
+                        blackholeTitle.style.opacity = Math.max(0, 1 - progress * 2);
+                        blackholeText.style.transform = `translateY(${20 + progress * 100}px) scale(${1 + progress * 2})`;
+                        blackholeText.style.opacity = Math.max(0, 0.8 - progress * 2);
+
+                        // 音效
+                        if (audioContext && accelerationAudio) {
+                            const freq = 100 + progress * 1000;
+                            accelerationAudio.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+                            // 高频闪烁音效
+                            if (Math.random() < 0.1 + progress * 0.2) {
+                                const flashOscillator = audioContext.createOscillator();
+                                const gain = audioContext.createGain();
+                                flashOscillator.type = 'triangle';
+                                flashOscillator.frequency.value = 800 + Math.random() * 1000;
+                                flashOscillator.connect(gain);
+                                gain.connect(reverbNode);
+                                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                                gain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+                                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+                                flashOscillator.start();
+                                flashOscillator.stop(audioContext.currentTime + 0.2);
+                            }
+                        }
+
+                        // 视觉效果：时空穿梭感
+                        if (progress > 0.1) {
+                            for(let i = 0; i < 5; i++) {
+                                const line = document.createElement('div');
+                                line.classList.add('hyperspace-line');
+                                const angle = Math.random() * 360;
+                                const length = Math.random() * 100 + 50;
+                                const blur = 5 + progress * 10;
+                                const speed = 1000 + progress * 2000;
+
+                                line.style.width = `${length}px`;
+                                line.style.transform = `rotate(${angle}deg) translateX(${Math.random() * 100}px)`;
+                                line.style.setProperty('--line-color', `hsl(${progress * 360 + Math.random() * 50}, 100%, 70%)`);
+                                line.style.filter = `blur(${blur}px)`;
+                                pageThree.appendChild(line);
+
+                                let lineStartTime = Date.now();
+                                function animateLine() {
+                                    if (!isAccelerating) return line.remove();
+                                    const timeElapsed = (Date.now() - lineStartTime) / 1000;
+                                    const progress = timeElapsed / (5 / (1 + speed/2000));
+                                    const scaleX = 1 + progress * 5;
+                                    const opacity = Math.max(0, 1 - progress);
+                                    line.style.transform = `rotate(${angle}deg) scaleX(${scaleX})`;
+                                    line.style.opacity = opacity;
+
+                                    if(progress < 1) requestAnimationFrame(animateLine);
+                                    else line.remove();
+                                }
+                                requestAnimationFrame(animateLine);
+                            }
+                        }
+                        
+                        // 最终效果与跳转
+                        if (elapsedTime > 20) {
+                            clearInterval(accelerationInterval);
+                            isAccelerating = false;
+                            
+                            const finalWhiteout = document.createElement('div');
+                            finalWhiteout.style.position = 'fixed';
+                            finalWhiteout.style.top = '0';
+                            finalWhiteout.style.left = '0';
+                            finalWhiteout.style.width = '100%';
+                            finalWhiteout.style.height = '100%';
+                            finalWhiteout.style.background = 'black';
+                            finalWhiteout.style.opacity = '1';
+                            finalWhiteout.style.zIndex = '9999';
+                            finalWhiteout.style.transition = 'background 5s ease, opacity 5s ease';
+                            document.body.appendChild(finalWhiteout);
+
+                            setTimeout(() => {
+                                finalWhiteout.style.background = 'white';
+                                setTimeout(() => {
+                                    window.location.href = '#';
+                                }, 5000);
+                            }, 500);
+
+                            if (audioContext) {
+                                accelerationAudio.stop();
+                                if (tinnitusAudio) tinnitusAudio.stop();
+                            }
+                        }
+
+                    }, 50);
+                }
+            });
+
+            pageThree.addEventListener('mouseup', () => {
+                isAccelerating = false;
+                clearInterval(accelerationInterval);
+                if (audioContext && accelerationAudio) {
+                    accelerationAudio.stop();
+                    accelerationAudio = null;
+                }
+                if (tinnitusAudio) {
+                    tinnitusAudio.stop();
+                    tinnitusAudio = null;
+                }
+                
+                blackholeTitle.style.transition = 'all 0.5s ease-out';
+                blackholeText.style.transition = 'all 0.5s ease-out';
+                blackholeTitle.style.transform = 'translate(-50%, -50%) scale(1)';
+                blackholeTitle.style.opacity = 1;
+                blackholeText.style.transform = 'translateY(0) scale(1)';
+                blackholeText.style.opacity = 0.8;
+                
+                accelerationEffects.forEach(effect => effect.remove());
+            });
+
+        });
+    </script>
+</body>
+</html>
